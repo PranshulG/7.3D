@@ -1,0 +1,50 @@
+import RPi.GPIO as GPIO
+import time
+ 
+GPIO.setmode(GPIO.BOARD)
+lgtpin = 12             # PWM pin 12 connected to LED
+trig_pin = 8
+echo_pin = 7
+ 
+ 
+dist = 0 #dist of ultrasonic
+start_time = 0
+end_time = 0
+GPIO.setwarnings(False)         #disable warnings
+GPIO.setmode(GPIO.BOARD)        #set pin numbering system
+GPIO.setup(lgtpin,GPIO.OUT)
+GPIO.setup(trig_pin, GPIO.OUT)
+GPIO.setup(echo_pin, GPIO.IN)
+pww = GPIO.PWM(lgtpin, 1000)        #frequency of PWM is set to 1000
+pww.start(0)                        #initial value of PWM is 0
+ 
+try:
+    while True:
+        #sending a pulse
+        GPIO.output(trig_pin, 0)
+        time.sleep(0.000002)    #2 microsecond delay
+        GPIO.output(trig_pin, 1)
+        time.sleep(0.00001)     #1 microsecond delay
+        GPIO.output(trig_pin, 0)
+ 
+        # measuring time duration
+        while GPIO.input(echo_pin) == 0:
+            start_time = time.time()
+        while not GPIO.input(echo_pin) == 0:
+            end_time = time.time()
+        
+        timeDuration = end_time - start_time
+        
+        dist = (timeDuration*34300)/2
+
+ 
+        #pwm LED power manage. Changes acc to dist
+        if dist <= 70 and dist > 0:
+            pww.ChangeDutyCycle(((70 - dist)/70)*100)
+        else:
+            pww.ChangeDutyCycle(0)
+        #pwm end
+        time.sleep(0.8)
+except KeyboardInterrupt:
+    pww.stop()
+    GPIO.cleanup()
